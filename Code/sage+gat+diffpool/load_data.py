@@ -109,7 +109,8 @@ def read_graphfile(datadir, dataname, max_nodes=None):
         # relabeling
         mapping={}
         it=0
-        if float(nx.__version__)<2.0:
+        # if float(nx.__version__)<2.0:     # Broken on networkx 2.5.1
+        if False:
             for n in G.nodes():
                 mapping[n]=it
                 it+=1

@@ -15,6 +15,10 @@ import shutil
 import time
 import math
 
+import sys
+
+print("Torch finds GPU: ", torch.cuda.is_available())       # Can't find the GPU without this
+sys.path.append("/home/bobby/PycharmProjects/two-stage-gnn/eigengcn/gen")
 import cross_val
 import encoders
 import encoders_GAT

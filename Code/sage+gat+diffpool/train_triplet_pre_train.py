@@ -15,6 +15,10 @@ import shutil
 import time
 import math
 
+import sys
+
+print("Torch finds GPU: ", torch.cuda.is_available())       # Can't find the GPU without this
+sys.path.append("/home/bobby/PycharmProjects/two-stage-gnn/eigengcn/gen")
 import cross_val
 import encoders
 import encoders_GAT
@@ -253,7 +257,8 @@ def train(dataset, model, ensemble_model, args, same_feat=True, val_dataset=None
             for param in model.parameters():
                 l2_reg += torch.norm(param).cuda()
 
-            loss = F.cross_entropy(F.softmax(pred), label)
+            # loss = F.cross_entropy(F.softmax(pred), label) # Softmax call is deprecated, training freezes on it
+            loss = F.cross_entropy(pred, label)
             
             posttrain_loss += loss.item()
             iter += 1
@@ -418,7 +423,6 @@ def benchmark_task_val(args, writer=None, feat='learnable'):
         model_2 = encoders.FinalFC(input_dim = args.output_dim, hidden_dims = [64, 32], embedding_dim = args.num_classes)
         
         ensemble_model = encoders.Ensemble(model, model_2)
-
             
         if args.val == True:
             train_acc, test_acc, val_acc = train(train_dataset, model, ensemble_model, args, val_dataset=val_dataset, test_dataset=test_dataset,
@@ -431,6 +435,9 @@ def benchmark_task_val(args, writer=None, feat='learnable'):
             writer=writer, iteration=i)
             all_tests.append(test_acc)
             all_trains.append(train_acc)
+
+        torch.save(model, "saved_models/model" + str(i) + ".pt")
+        # Does this work?
 
     # Report performance on train
     all_trains_mean = np.mean(all_trains, axis=0)
