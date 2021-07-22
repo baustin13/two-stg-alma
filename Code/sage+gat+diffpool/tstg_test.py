@@ -11,6 +11,7 @@ import numpy as np
 import alma
 from alma_utils import *
 import random
+import networkx as nx
 
 def res_task_lits(lit_str):
     L = lit_str.split('\n')[:-1]
@@ -47,7 +48,7 @@ def explosion(size, kb):
     return r
 
 
-def two_stg_test(network, network_priors, exp_size=10, num_steps=500, alma_heap_print_size=100, prb_print_size=30, numeric_bits=10, heap_print_freq=10, prb_threshold=-1, use_gnn = True, kb='/home/justin/alma-2.0/glut_control/test1_kb.pl', gnn_nodes=2000, initial_test=False):
+def two_stg_test(network, network_priors, exp_size=10, num_steps=500, alma_heap_print_size=100, prb_print_size=30, numeric_bits=10, heap_print_freq=10, prb_threshold=-1, use_gnn = True, kb='/home/justin/alma-2.0/glut_control/test1_kb.pl', gnn_nodes=100, initial_test=False):
     global alma_inst,res
     alma_inst,res = alma.init(1,kb, '0', 1, 1000, [], [])
     dbb_instances = []
@@ -92,21 +93,23 @@ def two_stg_test(network, network_priors, exp_size=10, num_steps=500, alma_heap_
         two_stg_dataset(X, Y)
         dataset = read_graphfile('2STGTest', 'ALMA')
 
-        for c in dataset.keys():
-            for graph in dataset[c]:
-                adj = Variable(torch.Tensor([graph.graph['adj']]), requires_grad=False).cuda()
-                h0 = Variable(torch.Tensor([graph.graph['feats']]), requires_grad=False).cuda()
-                batch_num_nodes = np.array([graph.graph['num_nodes']])
-                assign_input = Variable(torch.Tensor(graph.graph['assign_feats']), requires_grad=False).cuda()
 
-                feat, out = model(h0, adj, batch_num_nodes, assign_x=assign_input)
-                priorities = np.zeros(len(X))
-                for i in range(len(priorities)):
-                    # priorities[i] = pred[i][1]                      # activation val
-                    # priorities[i] = 1 / (1 + np.exp(priorities[i]))  # sigmoid for cross entropy
-                    p0 = float()
-                    p1 = float()
-                    priorities[i] = 1 - (np.exp(p1)/(np.exp(p1) + np.exp(p0)))
+        # Line 99 is the currrent breaking point. I'm trying to make use of code from train_triplet_pre_train.py to understand
+        # how the model needs to see the data but it's very difficult to make sense of.
+        # line 387 in train_triplet_pre_train.py they do something to produce the dataset.
+
+        for graph in dataset:
+            adj = Variable(torch.Tensor([graph.graph['adj']]), requires_grad=False).cuda()
+            h0 = Variable(torch.Tensor([graph.graph['feats']]), requires_grad=False).cuda()
+            batch_num_nodes = np.array([graph.graph['num_nodes']])
+            assign_input = Variable(torch.Tensor(graph.graph['assign_feats']), requires_grad=False).cuda()
+
+            feat, out = model(h0, adj, batch_num_nodes, assign_x=assign_input)
+            priorities = np.zeros(len(X))
+            for i in range(len(priorities)):
+                p0 = float()
+                p1 = float()
+                priorities[i] = 1 - (np.exp(p1)/(np.exp(p1) + np.exp(p0)))
     else:
         priorities = np.random.uniform(size=len(res_task_input))
 
