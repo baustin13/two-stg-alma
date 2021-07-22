@@ -47,7 +47,7 @@ def explosion(size, kb):
     return r
 
 
-def two_stg_test(network, network_priors, exp_size=10, num_steps=500, alma_heap_print_size=100, prb_print_size=30, numeric_bits=10, heap_print_freq=10, prb_threshold=-1, use_gnn = False, kb='/home/justin/alma-2.0/glut_control/test1_kb.pl', gnn_nodes=2000, initial_test=False):
+def two_stg_test(network, network_priors, exp_size=10, num_steps=500, alma_heap_print_size=100, prb_print_size=30, numeric_bits=10, heap_print_freq=10, prb_threshold=-1, use_gnn = True, kb='/home/justin/alma-2.0/glut_control/test1_kb.pl', gnn_nodes=2000, initial_test=False):
     global alma_inst,res
     alma_inst,res = alma.init(1,kb, '0', 1, 1000, [], [])
     dbb_instances = []
@@ -172,7 +172,7 @@ def two_stg_test(network, network_priors, exp_size=10, num_steps=500, alma_heap_
 
 
 def two_stg_dataset(X, Y):
-    # dim_nfeats = len(X[0][1][0])
+    dim_nfeats = len(X[0][1][0])
 
     gclasses = 2
     NODES_PER_GRAPH = 100
