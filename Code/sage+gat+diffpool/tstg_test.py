@@ -181,14 +181,14 @@ def two_stg_dataset(X, Y):
     num_edges = 0
     num_graphs = 0
 
-    if not os.path.exists('2STGTest'):
-        os.mkdir('2STGTest')
+    if not os.path.exists('2STGTest/ALMA'):
+        os.mkdir('2STGTest/ALMA')
 
-    edges_file = open('2STGTest/ALMA_A.txt', 'a')                        # STORE EDGES
-    graph_indicator = open('2STGTest/ALMA_graph_indicator.txt', 'a')     # INDEX NODES TO GRAPHS
-    node_labels = open('2STGTest/ALMA_node_labels.txt', 'a')             # ALL ZEROES
-    graph_labels = open('2STGTest/ALMA_graph_labels.txt', 'a')           # GRAPH CLASS LABELS
-    node_attributes = open('2STGTest/ALMA_node_attributes.txt', 'a')     # NODE FEATURES
+    edges_file = open('2STGTest/ALMA/ALMA_A.txt', 'a')                        # STORE EDGES
+    graph_indicator = open('2STGTest/ALMA/ALMA_graph_indicator.txt', 'a')     # INDEX NODES TO GRAPHS
+    node_labels = open('2STGTest/ALMA/ALMA_node_labels.txt', 'a')             # ALL ZEROES
+    graph_labels = open('2STGTest/ALMA/ALMA_graph_labels.txt', 'a')           # GRAPH CLASS LABELS
+    node_attributes = open('2STGTest/ALMA/ALMA_node_attributes.txt', 'a')     # NODE FEATURES
 
     for graph in X:
         y = 1 + (num_graphs * NODES_PER_GRAPH)                       # 1, NOT 0, THAT'S HOW DATA_LOAD EXPECTS
