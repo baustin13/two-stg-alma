@@ -97,6 +97,7 @@ def two_stg_test(network, network_priors, exp_size=10, num_steps=500, alma_heap_
         # Line 99 is the currrent breaking point. I'm trying to make use of code from train_triplet_pre_train.py to understand
         # how the model needs to see the data but it's very difficult to make sense of.
         # line 387 in train_triplet_pre_train.py they do something to produce the dataset.
+        # something from cross_val.py
 
         for graph in dataset:
             adj = Variable(torch.Tensor([graph.graph['adj']]), requires_grad=False).cuda()
