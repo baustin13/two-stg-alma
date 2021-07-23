@@ -190,7 +190,7 @@ class res_prebuffer:
         self.subjects_dict = {}
         for idx, subj in enumerate(self.subjects):
             self.subjects_dict[subj] = idx+1
-        if bow_algorithm == 'bow2' or bow_algorithm == 'bow1':
+        if bow_algorithm == 'bow2':
             self.subjects_dict["numerical0"] = self.num_subjects+1
             self.subjects_dict["numerical1"] = self.num_subjects+2
             self.subjects_dict["numerical2"] = self.num_subjects+3

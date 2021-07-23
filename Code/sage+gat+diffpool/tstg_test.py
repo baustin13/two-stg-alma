@@ -48,7 +48,7 @@ def explosion(size, kb):
     return r
 
 
-def two_stg_test(network, network_priors, exp_size=10, num_steps=500, alma_heap_print_size=100, prb_print_size=30, numeric_bits=10, heap_print_freq=10, prb_threshold=-1, use_gnn = True, kb='/home/justin/alma-2.0/glut_control/test1_kb.pl', gnn_nodes=100, initial_test=False):
+def two_stg_test(network, network_priors, exp_size=10, num_steps=500, alma_heap_print_size=100, prb_print_size=30, numeric_bits=10, heap_print_freq=10, prb_threshold=-1, use_gnn = True, kb='/home/justin/alma-2.0/glut_control/test1_kb.pl', gnn_nodes=50, initial_test=False):
     global alma_inst,res
     alma_inst,res = alma.init(1,kb, '0', 1, 1000, [], [])
     dbb_instances = []
@@ -57,24 +57,8 @@ def two_stg_test(network, network_priors, exp_size=10, num_steps=500, alma_heap_
     if len(res_tasks) == 0:
         return []
     res_lits = res_task_lits(exp[2])
-    #subjects = ['a0', 'a1', 'b0', 'b1']
-    # Compute initial subjects.  We want 'a','b' and first 8K integers in each of three places
-    subjects = []
-    for place in range(3):
-        for cat_subj in ['a', 'b']:
-            subjects.append("{}/{}".format(cat_subj, place))
-        for num_subj in range(2 ** numeric_bits):
-            subjects.append("{}/{}".format(num_subj, place))
-    # for place in range(3):
-    #     for cat_subj in ['a', 'b']:
-    #         subjects.append("{}/{}".format(cat_subj, place))
-    #     for num_subj in range(2**numeric_bits):
-    #         subjects.append("{}/{}".format(num_subj, place))
 
     subjects = ['a', 'b', 'distanceAt', 'distanceBetweenBoundedBy']
-    for place in range(3):
-        for cat_subj in ['a', 'b']:
-            subjects.append("{}/{}".format(cat_subj, place))
 
 
     # network.eval()
@@ -91,26 +75,61 @@ def two_stg_test(network, network_priors, exp_size=10, num_steps=500, alma_heap_
         Y = temp_network.ybuffer
 
         two_stg_dataset(X, Y)
-        dataset = read_graphfile('2STGTest', 'ALMA')
+        test_graphs = read_graphfile('2STGTest', 'ALMA')
 
 
-        # Line 99 is the currrent breaking point. I'm trying to make use of code from train_triplet_pre_train.py to understand
-        # how the model needs to see the data but it's very difficult to make sense of.
         # line 387 in train_triplet_pre_train.py they do something to produce the dataset.
-        # something from cross_val.py
+        # from cross_val.py:
 
-        for graph in dataset:
-            adj = Variable(torch.Tensor([graph.graph['adj']]), requires_grad=False).cuda()
-            h0 = Variable(torch.Tensor([graph.graph['feats']]), requires_grad=False).cuda()
-            batch_num_nodes = np.array([graph.graph['num_nodes']])
-            assign_input = Variable(torch.Tensor(graph.graph['assign_feats']), requires_grad=False).cuda()
+        max_nodes = 100
+        feat_dim = 11
+        num_classes = 2
 
-            feat, out = model(h0, adj, batch_num_nodes, assign_x=assign_input)
-            priorities = np.zeros(len(X))
-            for i in range(len(priorities)):
-                p0 = float()
-                p1 = float()
-                priorities[i] = 1 - (np.exp(p1)/(np.exp(p1) + np.exp(p0)))
+        test_graphs_dict = dict()
+        for i in range(num_classes):
+            test_graphs_dict[i] = []
+
+        for test_graph in test_graphs:
+
+            num_nodes = test_graph.number_of_nodes()
+            # label
+            label = int(test_graph.graph['label'])
+
+            # adj
+            adj = np.array(nx.to_numpy_matrix(test_graph))
+            adj_padded = np.zeros((max_nodes, max_nodes))
+            adj_padded[:num_nodes, :num_nodes] = adj
+            test_graph.graph['adj'] = adj_padded
+
+            # feats
+            f = np.zeros((max_nodes, feat_dim), dtype=float)
+            for i, u in enumerate(test_graph.nodes()):
+                f[i, :] = test_graph.nodes[u]['feat']
+                # crashes here because the vectorization code is somehow producing node features of size 20 rather than 11
+
+            test_graph.graph['feats'] = f
+
+            # num_nodes
+            test_graph.graph['num_nodes'] = num_nodes
+
+            # assign feats
+            test_graph.graph['assign_feats'] = f
+
+            test_graphs_dict[label].append(test_graph)
+
+        for c in test_graphs_dict.keys():
+            for graph in test_graphs_dict[c]:
+                adj = Variable(torch.Tensor([graph.graph['adj']]), requires_grad=False).cuda()
+                h0 = Variable(torch.Tensor([graph.graph['feats']]), requires_grad=False).cuda()
+                batch_num_nodes = np.array([graph.graph['num_nodes']])
+                assign_input = Variable(torch.Tensor(graph.graph['assign_feats']), requires_grad=False).cuda()
+
+                feat, out = model(h0, adj, batch_num_nodes, assign_x=assign_input)
+                priorities = np.zeros(len(X))
+                for i in range(len(priorities)):
+                    p0 = float()
+                    p1 = float()
+                    priorities[i] = 1 - (np.exp(p1)/(np.exp(p1) + np.exp(p0)))
     else:
         priorities = np.random.uniform(size=len(res_task_input))
 
@@ -151,17 +170,8 @@ def two_stg_test(network, network_priors, exp_size=10, num_steps=500, alma_heap_
             res_task_input = [x[:2] for x in prb]
 
             if network_priors:
-                temp_network = resolution_prebuffer.res_prebuffer(subjects, [], use_gnn=use_gnn, gnn_nodes=gnn_nodes)
-
-                prb = alma.prebuf(alma_inst)
-                res_tasks = prb[0]
-                res_lits = res_task_lits(prb[2])
-                res_task_input = [x[:2] for x in res_tasks]
-                temp_network.save_batch(res_task_input, res_lits)
-                X = temp_network.Xbuffer
-                Y = temp_network.ybuffer
-
-                # PRIORS AGAIN HERE
+                1 / 1
+                # everything inside the first "if network_priors:" on line 66 should be copied to here when it is working
 
             else:
                 priorities = np.random.uniform(size=len(res_task_input))
