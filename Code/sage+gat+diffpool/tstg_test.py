@@ -124,6 +124,8 @@ def two_stg_test(network, network_priors, exp_size=10, num_steps=500, alma_heap_
                 batch_num_nodes = np.array([graph.graph['num_nodes']])
                 assign_input = Variable(torch.Tensor(graph.graph['assign_feats']), requires_grad=False).cuda()
 
+                # Runs to here without issue, but line 129 leads to an error that I can't root out in a network forward call
+
                 feat, out = model(h0, adj, batch_num_nodes, assign_x=assign_input)
                 priorities = np.zeros(len(X))
                 for i in range(len(priorities)):
